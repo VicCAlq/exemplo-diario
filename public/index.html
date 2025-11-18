@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="user">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura-vader.css" type="text/css"> -->
+  <link rel="stylesheet" href="https://unpkg.com/mvp.css"> 
+  <!-- <link rel="stylesheet" href="https://unpkg.com/latex.css/style.min.css" /> -->
+  <style>
+    body {
+      background-image: url("assets/Watatsumi-Island.jpg"), linear-gradient(#ffeecc);
+      background-blend-mode: overlay;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+    }
+    #formulario {
+      width: 45vw;
+      min-width: 600px;
+      padding: 10px 30px;
+      border-radius: 20px;
+      background-image: radial-gradient(circle at 10% 10%, #664488cc, #333333cc);
+      backdrop-filter: blur(10px);
+    } 
+    #entradas-diario, #entrada-exemplo {
+      width: 50vw;
+      min-width: 700px;
+      margin: 10px auto;
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      grid-gap: 0px 30px;
+    }
+    #input-formulario {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      gap: 20px;
+    }
+    .entrada-diario {
+      min-diwth: 45vw;
+      border: 0px white solid;
+      border-radius: 20px;
+      padding: 10px 20px;
+      background-color: #333333cc;
+      backdrop-filter: blur(10px);
+      box-shadow: 5px 10px 20px #00000077;
+      line-height: 1.8rem;
+    }
+    .diario-sumario {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+    button {
+      background-image: radial-gradient(circle at 90% 90%, #658, #333);
+      border: 1px #547 solid;
+      border-radius: 10px;
+      color: #eee;
+    }
+    .apagar {
+      background-image: radial-gradient(circle at 90% 90%, #934, #333);
+      border: 1px #823 solid;
+    }
+    textarea {
+      background-color: #222222aa;
+      color: #eee;
+      border: none;
+      border-radius: 10px;
+    }
+    hr {
+      background-image: linear-gradient(to right, #835 0%, #b7e 20%, #835);
+      height: 3px;
+      width: 100%;
+      border: none;
+      border-radius: 2px;
+      margin: 10px 0;
+    }
+    header {
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="raiz">
+    
+    <header>
+      <h1>Meu Diário</h1>
+    </header>
+
+    <section>
+      <form id="formulario">
+        <label for="input-texto"><h3>Escreva sobre seu dia:</h3></label>
+        <textarea name="input-texto" id="input-texto" rows="5"></textarea>
+        <div id="input-formulario">
+          <button type="submit" id="input-enviar">Salvar diário</button>
+          <button type="button" id="input-limpar" onclick="limparFormulario()">Limpar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="entrada-exemplo">
+      <details id="diario-0" class="entrada-diario" open>
+        <summary class="diario-sumario" id="diario-sumario-0">
+          <h3 class="diario-titulo">30/02/20xx as 25:61 - Exemplo de entrada no diário</h3>
+          <div style="display: flex; flex-direction: row;">
+            <button 
+              id="deletar-${item.id}"
+              class="apagar"
+            >Apagar</button>
+          </div>
+        </summary>
+        <hr/>
+        <p>
+          Sou um exemplo de entrada neste diário. Note a data e hora impossíveis no cabeçalho acima: 
+          Servem para facilmente separar esta entrada das demais.
+        </p>
+        <p>
+          Este projeto foi feito de forma <strong>extremamente</strong> simples, usando apenas um pequeno
+          servidor Express rodando no runtime Node, e usando SQLite para armazenar as entradas do diário.
+          O código para este servidor se encontra no arquivo "server.js", e para executá-lo é necessário
+          antes instalar as ferramentas cadastradas no arquivo "package.json".
+        </p>
+        <p>
+          O frontend não possui nenhum "framework" como React ou similares, e todo o seu conteúdo se encontra
+          dentro deste único "index.html". Nele estamos utilizando um CSS sem classes externo para nos dar
+          uma boa base de estilos, e criamos algumas classes adicionais para customizar alguns elementos.
+          Toda a nossa estilização customizada escrita em CSS se encontra dentro da tag "style" no "head" 
+          deste arquivo, enquanto todo o "comportamento" da página se encontra no código JavaScript
+          localizado mais abaixo dentro da tag "script".
+        </p>
+        <p>
+          Este aplicativo nos mostra três das quatro operações mais comuns em uma aplicação na internet:
+          Podemos "criar" informações (CREATE), "apagar" informações (DELETE), "obter" as informações já
+          existentes (READ), e o que não foi implementado ainda é a opção de "atualizar" uma informação
+          já existente (UPDATE). Estas quatro "operações" recebem o acrônimo de "CRUD". Neste site, a
+          "informação" que tratamos usandoo "CRUD" são as entradas de nosso diário.
+        </p>
+      </details>
+    </section>
+
+    <section id="entradas-diario">
+    </section>
+
+  </div>
+
+  <script>
+    const ENDERECO_BASE = "/api/diario"
+    const entradasDiario = document.getElementById("entradas-diario");
+    const listaDiario = []
+    const formulario = document.getElementById("formulario");
+    let idItemEditado = null;
+
+    function limparFormulario() { formulario.reset() }
+
+    async function adicionarItem(dadosItem) {
+      const resposta = await fetch(ENDERECO_BASE, {
+        method: "POST",
+        headers: {
+          "Content-Type" : "application/json",
+        },
+        body: JSON.stringify(dadosItem)
+      })
+
+      if (!resposta.ok) { throw new Error("Falha em adicionar item a biblioteca") }
+
+      limparFormulario()
+      carregarDiarios()
+    }
+
+    async function enviarFormulario() {
+      const dadosFormulario = new FormData(formulario)
+      const dadosItem = { texto: dadosFormulario.get("input-texto"), }
+
+      console.log(dadosItem)
+
+      if (!dadosItem.texto.trim()) {
+        console.log("É preciso escrever algo para o diário")
+        return;
+      }
+
+      try {
+        await adicionarItem(dadosItem)
+      } catch (erro) {
+        console.log("Falha em adicionar ao diário: " + erro.message)
+      }
+    }
+
+    async function carregarDiarios() {
+      try {
+        const resposta = await fetch(ENDERECO_BASE)
+        if (!resposta.ok) {
+          throw new Error("Falha em carregar entradas anteriores do diário.")
+        }
+        const resultado = await resposta.json()
+        mostrarDiarios(resultado.data || [])
+      } catch (erro) {
+        console.log("Falha em carregar entradas do diário: " + erro.message)
+      }
+    }
+
+    function mostrarDiarios(itens) {
+      let listaDeItens = ""
+      itens.forEach((item) => {
+        listaDeItens += mostrarItem(item)
+      })
+      entradasDiario.innerHTML = listaDeItens
+    }
+
+    function mostrarItem(item) {
+      return `
+        <details id="diario-${item.id}" class="entrada-diario">
+          <summary class="diario-sumario" id="diario-sumario-${item.id}">
+            <h3 class="diario-titulo">${item.data} - ${item.texto.substring(0, 70)}...</h3>
+            <div style="display: flex; flex-direction: row;">
+              <button 
+                id="deletar-${item.id}"
+                onclick="removerDiario(${item.id})"
+                class="apagar"
+              >Apagar</button>
+            </div>
+          </summary>
+          <hr/>
+          ${item.texto}
+        </details>
+      `
+    }
+
+    async function removerDiario(id) {
+      // let confirmacao = confirm("Deseja mesmo remover este item?")
+      // if (!confirmacao) { return }
+
+      try {
+        const resposta = await fetch(`${ENDERECO_BASE}/${id}`, {
+          method: "DELETE",
+        })
+
+        if (!resposta.ok) { throw new Error("Falha em remover item da biblioteca")}
+
+        carregarDiarios()
+      } catch (erro) {
+        console.log("Falha em remover item: " + erro.message)
+      }
+    }
+
+    function inicializar() {
+      formulario.addEventListener("submit", (evento) => {
+        evento.preventDefault()
+        enviarFormulario()
+      })
+      carregarDiarios()
+    }
+    inicializar()
+  </script>
+
+</body>
+</html>
