@@ -1,7 +1,7 @@
 #  Primeiramente, bem-vindos!
 
-Me chamo Victor, e vou conversar um pouco com vocês
-sobre uma das diversas áreas de programação/desenvolvimento de software:
+Me chamo Victor, e vou conversar um pouco com vocês sobre 
+uma das diversas áreas de programação/desenvolvimento de software:
 
 >  Desenvolvimento web!
 
